@@ -1,4 +1,4 @@
 DmxDue
 ======
 
-Dmx Libray for Arduino Due
+Dmx Library for Arduino Due
