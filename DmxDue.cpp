@@ -199,33 +199,52 @@ void DmxDue::IrqHandler(void)
 
 // Array of DMX values (raw).
 // Entry 0 will never be used for DMX data but will store the startbyte (0 for DMX mode).
+
+
+
+
+#ifdef DMX1
 uint8_t dmx_rx_buffer1[DMX_RX_MAX + 1];
-uint8_t dmx_rx_buffer2[DMX_RX_MAX + 1];
-uint8_t dmx_rx_buffer3[DMX_RX_MAX + 1];
-
-
 uint8_t dmx_tx_buffer1[DMX_TX_MAX];
-uint8_t dmx_tx_buffer2[DMX_TX_MAX];
-uint8_t dmx_tx_buffer3[DMX_TX_MAX];
-
 // Create class instances
 DmxDue DmxDue1(USART0, USART0_IRQn, ID_USART0, dmx_rx_buffer1, dmx_tx_buffer1);
-DmxDue DmxDue2(USART1, USART1_IRQn, ID_USART1, dmx_rx_buffer2, dmx_tx_buffer2);
-DmxDue DmxDue3(USART3, USART3_IRQn, ID_USART3, dmx_rx_buffer3, dmx_tx_buffer3);
 
 // IT handlers
 void USART0_Handler( void )
 {
   DmxDue1.IrqHandler() ;
 }
+#endif
+#ifdef DMX2
+uint8_t dmx_rx_buffer2[DMX_RX_MAX + 1];
+uint8_t dmx_tx_buffer2[DMX_TX_MAX];
+DmxDue DmxDue2(USART1, USART1_IRQn, ID_USART1, dmx_rx_buffer2, dmx_tx_buffer2);
 
 void USART1_Handler( void )
 {
   DmxDue2.IrqHandler() ;
 }
+#endif
+#ifdef DMX3
+uint8_t dmx_rx_buffer3[DMX_RX_MAX + 1];
+uint8_t dmx_tx_buffer3[DMX_TX_MAX];
+DmxDue DmxDue3(USART3, USART3_IRQn, ID_USART3, dmx_rx_buffer3, dmx_tx_buffer3);
 
 void USART3_Handler( void )
 {
   DmxDue3.IrqHandler() ;
 }
+#endif
+
+#ifdef DMX4
+//Spare unlisted USART on the board
+uint8_t dmx_rx_buffer4[DMX_RX_MAX + 1];
+uint8_t dmx_tx_buffer4[DMX_TX_MAX];
+DmxDue DmxDue4(USART2, USART2_IRQn, ID_USART2, dmx_rx_buffer4, dmx_tx_buffer4);
+
+void USART2_Handler( void )
+{
+  DmxDue4.IrqHandler() ;
+}
+#endif
 

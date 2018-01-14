@@ -16,6 +16,9 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+//#define DMX1
+#define DMX4
+
 #ifndef _DmxDue_
 #define _DmxDue_
 
@@ -89,9 +92,18 @@ public:
 
 #ifdef __cplusplus
 
+#ifdef DMX1
 extern DmxDue DmxDue1;
+#endif
+#ifdef DMX2
 extern DmxDue DmxDue2;
+#endif
+#ifdef DMX3
 extern DmxDue DmxDue3;
+#endif
+#ifdef DMX4
+extern DmxDue DmxDue4;
+#endif
 
 #endif
 
