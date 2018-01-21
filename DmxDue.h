@@ -16,8 +16,10 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-//#define DMX1
-#define DMX4
+#define DMX1
+//#define DMX2
+//#define DMX3
+//#define DMX4
 
 #ifndef _DmxDue_
 #define _DmxDue_
@@ -40,10 +42,14 @@ typedef enum {
 
 
 typedef enum {
-  TX_DATA, TX_BREAK, TX_BREAK2 
+  TX_DATA, TX_BREAK, TX_BREAK1, TX_BREAK2, TX_START, TX_DISABLE 
 } dmxTxState_t;
 
-typedef void (*Fptr)();
+//typedef void (*Fptr)();
+
+extern "C" {
+  typedef void (*Fptr)();
+}
 
 class DmxDue {
 protected:
@@ -58,23 +64,31 @@ private:
 	uint16_t	_rxLength;
 	
 	// transmitter
-	dmxTxState_t	_txState;
+	dmxTxState_t	       _txState;
 	uint16_t		_txCnt;	
 	uint8_t 		*_tx_buffer;
 	Fptr 			_txReadyEvent; 
+	Fptr 			_rxReadyEvent; 
+
 	uint16_t		_maxTxChannels;
+	void markAfterBreak();
 	
 public:
     DmxDue(Usart* pUsart, IRQn_Type dwIrq, uint32_t dwId, uint8_t* pRx_buffer, uint8_t* pTx_buffer);
     void begin();
+    void setInterruptPriority(uint32_t priority);
     void IrqHandler(void);
-	uint8_t read(uint16_t channel);
+
+    uint8_t read(uint16_t channel);
+    uint16_t getRxLength();	
 	
 	//transmitter
 	void beginWrite();
 	
 	void setBreakEvent(Fptr f);
-	void markAfterBreak();
+	// attach function that will be called when new data was received.
+        void setRxEvent(Fptr f);
+	
 	
 	// clear transmit buffer 
 	void clrTxBuffer();

@@ -13,6 +13,10 @@ DmxDue::DmxDue(Usart* pUsart, IRQn_Type dwIrq, uint32_t dwId, uint8_t *pRx_buffe
   
   _tx_buffer = pTx_buffer;
   _txReadyEvent = NULL;
+  _rxReadyEvent = NULL;
+  
+  _rxCnt=0;
+  _rxLength=0;
   
   clrTxBuffer();
   setTxMaxChannels(DMX_TX_MAX);
@@ -59,6 +63,12 @@ uint8_t DmxDue::read(uint16_t channel)
 	return _rx_buffer[channel];
 }
 
+uint16_t DmxDue::getRxLength()
+{
+return _rxLength;
+}
+
+
 // initialise hardware
 void DmxDue::begin()
 {
@@ -76,28 +86,33 @@ void DmxDue::begin()
                    US_MR_NBSTOP_2_BIT | US_MR_CHMODE_NORMAL;
 
   // Configure baudrate, asynchronous no oversampling
-  _pUsart->US_BRGR = (SystemCoreClock / 250000) / 16 ;
+  _pUsart->US_BRGR = (SystemCoreClock / (250000 *16)) ;
 
   // Configure interrupts
   _pUsart->US_IDR = 0xFFFFFFFF;
  // _pUsart->US_IER = US_IER_RXRDY | US_IER_OVRE| US_IER_FRAME | US_IER_RXBRK | US_IER_TXRDY | US_IER_TXEMPTY;
    _pUsart->US_IER = US_IER_RXRDY | US_IER_RXBRK | US_IER_TXRDY;
-
-  // Enable UART interrupt in NVIC
-  NVIC_EnableIRQ( _dwIrq ) ;
+//
 
   // first thing to do is generate break	
   _txState = TX_BREAK;
   
   // Enable receiver and transmitter
   _pUsart->US_CR = US_CR_RXEN | US_CR_TXEN;
+// Enable UART interrupt in NVIC             
+  NVIC_EnableIRQ( _dwIrq ) ;
+
 }
 
+void DmxDue::setRxEvent(Fptr f)
+{
+	_rxReadyEvent = f;
+ }
 
 void DmxDue::setBreakEvent(Fptr f)
 {
 	_txReadyEvent = f;
-}
+ }
 
 void DmxDue::markAfterBreak()
 {
@@ -113,18 +128,21 @@ void DmxDue::beginWrite()
   	_txState = TX_DATA;  // next state
 }
 
+
+void DmxDue::setInterruptPriority(uint32_t priority)
+{
+  NVIC_SetPriority(_dwIrq, priority & 0x0F);
+}
+
 // all usartX interupts together
 void DmxDue::IrqHandler(void)
-{
+{ 
+	
+	
+	
 	uint32_t status = _pUsart->US_CSR;   // get state before data!
    
-	// Receiver Break = frame error
-	if (status & US_CSR_RXBRK) {  	//check for break
-		_rxState = BREAK; // break condition detected.
-		_rxLength = _rxCnt; // store dmx length 
-		_pUsart->US_CR |= US_CR_RSTSTA;
-	} 
-
+   
 	// Did we receive data ?
 	if (status & US_CSR_RXRDY) {
 		uint8_t dmxByte =_pUsart->US_RHR;	// get data
@@ -137,7 +155,7 @@ void DmxDue::IrqHandler(void)
 					_rxState = DATA;  // normal DMX start code detected
 					_rxCnt = 1;       // start with channel # 1
 				} else {
-					_rxState = IDLE; //  wait for next BREAK !
+					;//_rxState = IDLE; //  wait for next BREAK !
 				} 
 				break;	
 			case DATA:
@@ -154,8 +172,22 @@ void DmxDue::IrqHandler(void)
 		}
 	}
 
+
+
+   
+	// Receiver Break = frame error
+	if (status & US_CSR_RXBRK) {  	//check for break
+		_rxState = BREAK; // break condition detected.
+		if (_rxCnt>1) _rxLength = _rxCnt-2; // store dmx length 
+			else _rxLength =0;    		
+		_pUsart->US_CR |= US_CR_RSTSTA;
+	        if (_rxReadyEvent && _rxLength) _rxReadyEvent();
+	} 
+
 	// tx ready
-	if (status & US_CSR_TXRDY) {  	
+	if (status & US_CSR_TXRDY) {
+	
+	  	
   		switch (_txState) {
   		case TX_DATA:
   			// Send character
@@ -169,16 +201,42 @@ void DmxDue::IrqHandler(void)
   		case TX_BREAK:
   			// send first break byte
   			_pUsart->US_CR |= US_CR_STTBRK;
+  			_pUsart->US_THR=0;
+  			_txState = TX_BREAK1;
+  			break;
+  			
+  		case TX_BREAK1:
+  			// send 2-nd break byte
+		        _pUsart->US_THR=0;
   			_txState = TX_BREAK2;
   			break;
+  			
   		case TX_BREAK2:
-  			// break must be 88 uSec so , 44 uSec to go
+  		        // send 3-th break byte
+  			_pUsart->US_THR=0;
+  			// break must be at leat 88 uSec so , 44 uSec to go
   			if (_txReadyEvent)	_txReadyEvent();
+  			_txState = TX_START;
   			break;	
+  		case TX_START:
+  		
+  	        _pUsart->US_CR |= US_CR_STPBRK; //Stop Break. 2 stop bits from break bytes will working as Mark After Break
+  	        
+  		_pUsart->US_THR = 0; // Send INIT
+  	        _txCnt = 0;
+  	        _txState = TX_DATA;  // next state	
+  		
+  		case TX_DISABLE:
   		default:	
-  		  break;
+  	        // Mask off transmit interrupt so we don't get it anymore
+                //_pUsart->USART_IDR = USART_IDR_TXRDY;
+  		
+  		break;
+  		
   		}
+   	
    	} 
+
  
   /* 
   // Acknowledge errors
