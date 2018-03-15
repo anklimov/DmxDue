@@ -268,7 +268,7 @@ uint8_t dmx_tx_buffer1[DMX_TX_MAX];
 DmxDue DmxDue1(USART0, USART0_IRQn, ID_USART0, dmx_rx_buffer1, dmx_tx_buffer1);
 
 // IT handlers
-void USART0_Handler( void )
+void myUSART0_Handler( void )
 {
   DmxDue1.IrqHandler() ;
 }
