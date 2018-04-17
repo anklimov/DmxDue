@@ -1,10 +1,10 @@
-DmxDue
+# DmxDue
 ======
 
 Dmx Library for Arduino Due
-Features:
-Hardware USART and interrupts using. No wasting CPU time
-Simultaneously RX and TX using single USART
+# Features:
+* Hardware USART and interrupts using. No wasting CPU time
+* Simultaneously RX and TX using single USART
 
 # Due compilation issue "USART<X>_Handler redefinition"
 Please, open  /variants/arduino_due_x/variant.cpp file, then add USART0_Handler method definition like this
