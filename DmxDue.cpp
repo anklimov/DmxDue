@@ -21,6 +21,8 @@ DmxDue::DmxDue(Usart* pUsart, IRQn_Type dwIrq, uint32_t dwId, uint8_t *pRx_buffe
   clrTxBuffer();
   setTxMaxChannels(DMX_TX_MAX);
   
+  _rxState = RX_OFF;
+  _txState = TX_OFF;
   
 }
 
@@ -96,7 +98,7 @@ void DmxDue::begin()
 
   // first thing to do is generate break	
   _txState = TX_BREAK;
-  
+  _rxState = IDLE;
   // Enable receiver and transmitter
   _pUsart->US_CR = US_CR_RXEN | US_CR_TXEN;
 // Enable UART interrupt in NVIC             
@@ -138,7 +140,7 @@ void DmxDue::setInterruptPriority(uint32_t priority)
 void DmxDue::IrqHandler(void)
 { 
 	
-	
+	if (_rxState == RX_OFF && _txState == TX_OFF) return;
 	
 	uint32_t status = _pUsart->US_CSR;   // get state before data!
    

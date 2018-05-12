@@ -37,12 +37,12 @@
 
 // State of receiving DMX Bytes
 typedef enum {
-  IDLE, BREAK, DATA
+  IDLE, BREAK, DATA, RX_OFF
 } dmxRxState_t;
 
 
 typedef enum {
-  TX_DATA, TX_BREAK, TX_BREAK1, TX_BREAK2, TX_START, TX_DISABLE 
+  TX_DATA, TX_BREAK, TX_BREAK1, TX_BREAK2, TX_START, TX_DISABLE, TX_OFF 
 } dmxTxState_t;
 
 //typedef void (*Fptr)();
