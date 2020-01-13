@@ -54,6 +54,15 @@ void DmxDue::write(uint16_t channel, uint8_t value)
 	_tx_buffer[channel - 1] = value;
 }
 
+
+// get value from  transmit buffer
+uint8_t DmxDue::getTx(uint16_t channel)
+{
+	// sanity check
+	if (channel == 0 || channel > DMX_TX_MAX) return 0;
+	
+	return _tx_buffer[channel - 1];
+}
 /* --------- receiver ---------- */
 
 // return dmx value from channel 

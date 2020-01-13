@@ -95,7 +95,7 @@ public:
 	
 	// write value to transmit buffer
 	void write(uint16_t channel , uint8_t value);
-	
+	uint8_t getTx(uint16_t channel);
 	// set max transmit channels
 	void setTxMaxChannels(uint16_t maxChannels);
 };
